@@ -428,4 +428,1841 @@
 
     .mobile-staff-header {
       display: flex;
-      justify
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .mobile-staff-name {
+      font-size: 16px;
+      font-weight: 850;
+    }
+
+    .mobile-add-button {
+      padding: 7px 9px;
+      background: #e8f0ed;
+      color: var(--green);
+      font-size: 12px;
+    }
+
+    .no-shift {
+      padding: 9px 0;
+      color: #8b9691;
+      font-size: 13px;
+    }
+
+    dialog {
+      width: min(94vw, 520px);
+      max-height: 90vh;
+      padding: 0;
+      border: 0;
+      border-radius: 16px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal {
+      max-height: 90vh;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .modal h2 {
+      margin: 0 0 5px;
+    }
+
+    .modal-date {
+      margin: 0 0 16px;
+      color: var(--muted);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    label {
+      display: block;
+      margin: 11px 0 5px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .modal input,
+    .modal select {
+      width: 100%;
+      padding: 11px;
+      border: 1px solid #ccd5d1;
+      border-radius: 9px;
+      background: white;
+    }
+
+    .meeting-area {
+      display: none;
+    }
+
+    .meeting-area.show {
+      display: block;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .primary-button {
+      background: var(--green);
+      color: white;
+    }
+
+    .danger-button {
+      flex-shrink: 0;
+      padding: 6px 8px;
+      background: #fee2e2;
+      color: var(--danger);
+    }
+
+    .existing-list {
+      margin: 10px 0 18px;
+    }
+
+    .existing-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+      padding: 9px;
+      border: 1px solid #ddd;
+      border-radius: 9px;
+    }
+
+    .toast {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 100;
+      max-width: calc(100vw - 32px);
+      padding: 12px 15px;
+      border-radius: 10px;
+      background: #18211e;
+      color: white;
+      font-size: 13px;
+      opacity: 0;
+      transform: translateY(15px);
+      pointer-events: none;
+      transition: 0.2s;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 700px) {
+      header {
+        position: static;
+      }
+
+      .header-content {
+        align-items: flex-start;
+      }
+
+      .brand {
+        width: 100%;
+      }
+
+      .header-actions {
+        width: 100%;
+      }
+
+      .header-actions select,
+      .header-actions button {
+        flex: 1;
+        min-width: 95px;
+      }
+
+      main {
+        padding: 10px;
+      }
+
+      .toolbar {
+        padding: 10px;
+      }
+
+      .week-navigation {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .week-navigation strong {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .toolbar-buttons {
+        width: 100%;
+      }
+
+      .toolbar-buttons button {
+        flex: 1;
+      }
+
+      .desktop-board {
+        display: none;
+      }
+
+      .mobile-board {
+        display: block;
+      }
+
+      .staff-management {
+        display: block;
+      }
+
+      .copy-next-day-button {
+        min-height: 34px;
+        padding: 7px 10px;
+        font-size: 12px;
+      }
+
+      .modal {
+        padding: 17px;
+      }
+    }
+
+    @media (min-width: 701px) {
+      .staff-management {
+        display: none;
+      }
+    }
+
+    @media print {
+      header,
+      .toolbar,
+      .staff-management,
+      .mobile-board,
+      .add-task-button,
+      .copy-next-day-button,
+      .delete-staff-button {
+        display: none !important;
+      }
+
+      .desktop-board {
+        display: block !important;
+        box-shadow: none;
+      }
+
+      main {
+        padding: 0;
+      }
+
+      .scroll-area {
+        overflow: visible;
+        max-height: none;
+      }
+
+      .shift-grid {
+        min-width: 0;
+        grid-template-columns: 110px repeat(7, 1fr);
+      }
+
+      .cell {
+        min-height: 90px;
+        font-size: 10px;
+      }
+
+      .staff-cell,
+      .header-cell {
+        position: static;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="header-content">
+      <div class="brand">
+        <div class="brand-icon">🍽️</div>
+
+        <div>
+          <h1 id="pageTitle"></h1>
+          <div class="subtitle" id="subtitle"></div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <select id="languageSelector">
+          <option value="ja">日本語</option>
+          <option value="en">English</option>
+        </select>
+
+        <button id="addStaffButton"></button>
+        <button id="printButton"></button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <div class="week-navigation">
+        <button id="previousWeekButton">‹</button>
+        <strong id="weekTitle"></strong>
+        <button id="nextWeekButton">›</button>
+      </div>
+
+      <div class="toolbar-buttons">
+        <button id="todayButton"></button>
+        <button id="weekButton" class="active"></button>
+        <button id="staffViewButton"></button>
+        <button id="dayViewButton"></button>
+      </div>
+
+      <span class="hint" id="hintText"></span>
+    </div>
+
+    <section class="staff-management">
+      <h2 id="staffManagementTitle"></h2>
+      <div id="staffChipList" class="staff-chip-list"></div>
+    </section>
+
+    <section id="desktopBoard" class="desktop-board">
+      <div class="scroll-area">
+        <div class="shift-grid" id="shiftGrid"></div>
+      </div>
+    </section>
+
+    <section id="mobileBoard" class="mobile-board"></section>
+  </main>
+
+  <dialog id="shiftEditor">
+    <div class="modal">
+      <h2 id="editorTitle"></h2>
+      <p class="modal-date" id="editorDate"></p>
+
+      <div id="existingEntries" class="existing-list"></div>
+
+      <hr>
+
+      <strong id="newTaskLabel"></strong>
+
+      <div class="form-row">
+        <div>
+          <label id="startLabel" for="startTime"></label>
+          <select id="startTime"></select>
+        </div>
+
+        <div>
+          <label id="endLabel" for="endTime"></label>
+          <select id="endTime"></select>
+        </div>
+      </div>
+
+      <label id="taskLabel" for="taskSelector"></label>
+      <select id="taskSelector"></select>
+
+      <div id="meetingArea" class="meeting-area">
+        <label id="meetingPersonLabel" for="meetingPerson"></label>
+        <input id="meetingPerson">
+      </div>
+
+      <label id="memoLabel" for="memoInput"></label>
+      <input id="memoInput">
+
+      <div class="modal-actions">
+        <button id="closeButton"></button>
+        <button id="addEntryButton" class="primary-button"></button>
+      </div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    "use strict";
+
+    const translations = {
+      ja: {
+        title: "週間シフト表",
+        subtitle: "小規模飲食店向けシフト管理",
+        addStaff: "＋ スタッフ",
+        print: "印刷",
+        hint: "時間・タスクの登録と、翌日へのコピーができます。",
+        staff: "スタッフ",
+        staffManagement: "スタッフ管理",
+        days: ["月", "火", "水", "木", "金", "土", "日"],
+        editShift: "シフト編集",
+        addAnotherTask: "新しい時間・タスクを追加",
+        start: "開始時間",
+        end: "終了時間",
+        task: "タスク",
+        meetingPerson: "誰とミーティングですか？",
+        meetingPersonPlaceholder: "例：店長、田中さん、取引先",
+        memo: "メモ（任意）",
+        memoPlaceholder: "例：予約対応、団体客対応",
+        close: "閉じる",
+        add: "追加",
+        addTimeTask: "＋ 時間・タスク",
+        weeklyHours: "週 {hours}時間",
+        enterStaffName: "スタッフ名を入力してください",
+        delete: "削除",
+        deleteStaff: "スタッフを削除",
+        deleteConfirmation: "この時間・タスクを削除しますか？",
+        deleteStaffConfirmation:
+          "{name}さんを削除しますか？登録済みのシフトも削除されます。",
+        invalidTime: "終了時間は開始時間より後にしてください。",
+        meetingPersonRequired: "ミーティング相手を入力してください。",
+        maximumStaff: "スタッフは10名まで登録できます。",
+        minimumStaff: "スタッフを全員削除することはできません。",
+        meetingWith: "相手",
+        noShift: "シフトなし",
+        today: "今日",
+        thisWeek: "今週",
+        staffView: "スタッフ表示",
+        dayView: "曜日表示",
+        copyNextDay: "翌日にコピー",
+        copyConfirmation: "この予定を翌日にコピーしますか？",
+        copySuccess: "翌日にコピーしました。",
+        duplicateShift: "翌日に同じ予定がすでに登録されています。",
+        tasks: [
+          { id: "meeting", name: "ミーティング" },
+          { id: "floor", name: "ホール" },
+          { id: "kitchen", name: "キッチン" },
+          { id: "other", name: "その他" }
+        ]
+      },
+
+      en: {
+        title: "Weekly Shift Schedule",
+        subtitle: "Shift management for small restaurants",
+        addStaff: "+ Staff",
+        print: "Print",
+        hint: "Add times and tasks or copy them to the next day.",
+        staff: "Staff",
+        staffManagement: "Staff management",
+        days: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        editShift: "Edit Shift",
+        addAnotherTask: "Add another time and task",
+        start: "Start time",
+        end: "End time",
+        task: "Task",
+        meetingPerson: "Who is the meeting with?",
+        meetingPersonPlaceholder: "Example: Manager or supplier",
+        memo: "Note (optional)",
+        memoPlaceholder: "Example: Group reservation",
+        close: "Close",
+        add: "Add",
+        addTimeTask: "+ Time & task",
+        weeklyHours: "{hours} hrs/week",
+        enterStaffName: "Enter staff name",
+        delete: "Delete",
+        deleteStaff: "Delete staff",
+        deleteConfirmation: "Delete this time and task?",
+        deleteStaffConfirmation:
+          "Delete {name}? All registered shifts for this staff member will also be deleted.",
+        invalidTime: "The end time must be later than the start time.",
+        meetingPersonRequired: "Enter the meeting participant.",
+        maximumStaff: "You can register up to 10 staff members.",
+        minimumStaff: "At least one staff member is required.",
+        meetingWith: "With",
+        noShift: "No shift",
+        today: "Today",
+        thisWeek: "This week",
+        staffView: "Staff view",
+        dayView: "Day view",
+        copyNextDay: "Copy to next day",
+        copyConfirmation: "Copy this schedule to the next day?",
+        copySuccess: "Copied to the next day.",
+        duplicateShift:
+          "The same schedule already exists on the next day.",
+        tasks: [
+          { id: "meeting", name: "Meeting" },
+          { id: "floor", name: "Floor" },
+          { id: "kitchen", name: "Kitchen" },
+          { id: "other", name: "Other" }
+        ]
+      }
+    };
+
+    const storageKey = "restaurantShiftAppMobileV2";
+
+    let appData = loadData();
+    let currentMonday = getMonday(new Date());
+    let activeCell = null;
+    let mobileDisplayMode = "week";
+    let selectedView = "automatic";
+
+    function element(id) {
+      return document.getElementById(id);
+    }
+
+    function loadData() {
+      try {
+        const savedData = localStorage.getItem(storageKey);
+
+        if (savedData) {
+          return JSON.parse(savedData);
+        }
+      } catch (error) {
+        console.error("Could not load saved data.", error);
+      }
+
+      return {
+        language: "ja",
+        staff: ["田中", "山田", "鈴木", "佐藤"],
+        shifts: {}
+      };
+    }
+
+    function saveData() {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify(appData)
+      );
+    }
+
+    function translate(key) {
+      return translations[appData.language][key];
+    }
+
+    function getMonday(date) {
+      const result = new Date(date);
+      const day = result.getDay() || 7;
+
+      result.setHours(0, 0, 0, 0);
+      result.setDate(result.getDate() - day + 1);
+
+      return result;
+    }
+
+    function createDateKey(date) {
+      const year = date.getFullYear();
+
+      const month = String(
+        date.getMonth() + 1
+      ).padStart(2, "0");
+
+      const day = String(
+        date.getDate()
+      ).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    }
+
+    function displayDate(date) {
+      if (appData.language === "ja") {
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      }
+
+      return `${date.getDate()}/${date.getMonth() + 1}`;
+    }
+
+    function displayFullDate(dateString) {
+      const date =
+        new Date(`${dateString}T00:00:00`);
+
+      if (appData.language === "ja") {
+        return (
+          `${date.getFullYear()}年` +
+          `${date.getMonth() + 1}月` +
+          `${date.getDate()}日`
+        );
+      }
+
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+    }
+
+    function setLanguage(language) {
+      appData.language = language;
+      saveData();
+      render();
+    }
+
+    function createTimeOptions() {
+      let options = "";
+
+      for (let hour = 0; hour <= 29; hour++) {
+        for (
+          let minute = 0;
+          minute < 60;
+          minute += 5
+        ) {
+          const hourText =
+            String(hour).padStart(2, "0");
+
+          const minuteText =
+            String(minute).padStart(2, "0");
+
+          const time =
+            `${hourText}:${minuteText}`;
+
+          options +=
+            `<option value="${time}">` +
+            `${time}</option>`;
+        }
+      }
+
+      return options;
+    }
+
+    function timeToMinutes(time) {
+      const parts =
+        time.split(":").map(Number);
+
+      return parts[0] * 60 + parts[1];
+    }
+
+    function calculateDuration(start, end) {
+      return Math.max(
+        0,
+        timeToMinutes(end) -
+          timeToMinutes(start)
+      ) / 60;
+    }
+
+    function getTaskName(taskId) {
+      const task =
+        translate("tasks").find(
+          function (item) {
+            return item.id === taskId;
+          }
+        );
+
+      return task ? task.name : taskId;
+    }
+
+    function calculateWeeklyHours(staffIndex) {
+      let total = 0;
+
+      for (
+        let dayIndex = 0;
+        dayIndex < 7;
+        dayIndex++
+      ) {
+        const date =
+          new Date(currentMonday);
+
+        date.setDate(
+          date.getDate() + dayIndex
+        );
+
+        const cellKey =
+          `${staffIndex}|${createDateKey(date)}`;
+
+        const entries =
+          appData.shifts[cellKey] || [];
+
+        entries.forEach(function (entry) {
+          total += calculateDuration(
+            entry.start,
+            entry.end
+          );
+        });
+      }
+
+      return total;
+    }
+
+    function escapeHtml(value) {
+      return String(value || "").replace(
+        /[&<>"']/g,
+        function (character) {
+          const characters = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+          };
+
+          return characters[character];
+        }
+      );
+    }
+
+    function createShiftEntryHtml(
+      entry,
+      staffIndex,
+      dateKey,
+      entryIndex
+    ) {
+      let details = "";
+
+      if (
+        entry.taskId === "meeting" &&
+        entry.meetingPerson
+      ) {
+        details += `
+          <div class="shift-detail">
+            ${translate("meetingWith")}:
+            ${escapeHtml(entry.meetingPerson)}
+          </div>
+        `;
+      }
+
+      if (entry.memo) {
+        details += `
+          <div class="shift-detail">
+            ${escapeHtml(entry.memo)}
+          </div>
+        `;
+      }
+
+      return `
+        <div
+          class="shift-entry
+          task-${entry.taskId}-border"
+        >
+          <div class="shift-time">
+            ${entry.start} - ${entry.end}
+          </div>
+
+          <span
+            class="task-badge
+            task-${entry.taskId}"
+          >
+            ${escapeHtml(
+              getTaskName(entry.taskId)
+            )}
+          </span>
+
+          ${details}
+
+          <div class="shift-entry-actions">
+            <button
+              type="button"
+              class="copy-next-day-button"
+              data-copy-staff-index="${staffIndex}"
+              data-copy-date-key="${dateKey}"
+              data-copy-entry-index="${entryIndex}"
+            >
+              ${translate("copyNextDay")}
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function showToast(message) {
+      element("toast").textContent = message;
+      element("toast").classList.add("show");
+
+      window.setTimeout(function () {
+        element("toast").classList.remove("show");
+      }, 2200);
+    }
+
+    function render() {
+      document.documentElement.lang =
+        appData.language;
+
+      element("pageTitle").textContent =
+        translate("title");
+
+      element("subtitle").textContent =
+        translate("subtitle");
+
+      element("addStaffButton").textContent =
+        translate("addStaff");
+
+      element("printButton").textContent =
+        translate("print");
+
+      element("hintText").textContent =
+        translate("hint");
+
+      element("languageSelector").value =
+        appData.language;
+
+      element("todayButton").textContent =
+        translate("today");
+
+      element("weekButton").textContent =
+        translate("thisWeek");
+
+      element("staffViewButton").textContent =
+        translate("staffView");
+
+      element("dayViewButton").textContent =
+        translate("dayView");
+
+      element("staffManagementTitle").textContent =
+        translate("staffManagement");
+
+      const endOfWeek =
+        new Date(currentMonday);
+
+      endOfWeek.setDate(
+        endOfWeek.getDate() + 6
+      );
+
+      element("weekTitle").textContent =
+        `${displayDate(currentMonday)} - ` +
+        `${displayDate(endOfWeek)}`;
+
+      renderStaffManagement();
+      renderDesktopSchedule();
+      renderMobileSchedule();
+      applySelectedView();
+      updateDisplayButtons();
+      activateCopyButtons();
+    }
+
+    function renderStaffManagement() {
+      element("staffChipList").innerHTML =
+        appData.staff.map(
+          function (staffName, staffIndex) {
+            return `
+              <div class="staff-chip">
+                <span>
+                  ${escapeHtml(staffName)}
+                </span>
+
+                <button
+                  class="staff-chip-delete"
+                  data-staff-index="${staffIndex}"
+                >
+                  ×
+                </button>
+              </div>
+            `;
+          }
+        ).join("");
+
+      document
+        .querySelectorAll(".staff-chip-delete")
+        .forEach(function (button) {
+          button.addEventListener(
+            "click",
+            function () {
+              deleteStaff(
+                Number(
+                  button.dataset.staffIndex
+                )
+              );
+            }
+          );
+        });
+    }
+
+    function renderDesktopSchedule() {
+      let gridHtml = `
+        <div
+          class="cell header-cell staff-cell"
+        >
+          ${translate("staff")}
+        </div>
+      `;
+
+      for (
+        let dayIndex = 0;
+        dayIndex < 7;
+        dayIndex++
+      ) {
+        const date =
+          new Date(currentMonday);
+
+        date.setDate(
+          date.getDate() + dayIndex
+        );
+
+        gridHtml += `
+          <div class="cell header-cell">
+            ${translate("days")[dayIndex]}
+            <br>
+            <small>${displayDate(date)}</small>
+          </div>
+        `;
+      }
+
+      appData.staff.forEach(
+        function (staffName, staffIndex) {
+          const weeklyHours =
+            calculateWeeklyHours(staffIndex);
+
+          gridHtml += `
+            <div class="cell staff-cell">
+              <div class="staff-name-row">
+                <div>
+                  <div class="staff-name">
+                    ${escapeHtml(staffName)}
+                  </div>
+
+                  <div class="weekly-hours">
+                    ${translate(
+                      "weeklyHours"
+                    ).replace(
+                      "{hours}",
+                      weeklyHours.toFixed(1)
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  class="delete-staff-button"
+                  data-staff-index="${staffIndex}"
+                  title="${translate(
+                    "deleteStaff"
+                  )}"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          `;
+
+          for (
+            let dayIndex = 0;
+            dayIndex < 7;
+            dayIndex++
+          ) {
+            const date =
+              new Date(currentMonday);
+
+            date.setDate(
+              date.getDate() + dayIndex
+            );
+
+            const dateKey =
+              createDateKey(date);
+
+            const cellKey =
+              `${staffIndex}|${dateKey}`;
+
+            const entries =
+              appData.shifts[cellKey] || [];
+
+            const entriesHtml =
+              entries.map(
+                function (
+                  entry,
+                  entryIndex
+                ) {
+                  return createShiftEntryHtml(
+                    entry,
+                    staffIndex,
+                    dateKey,
+                    entryIndex
+                  );
+                }
+              ).join("");
+
+            gridHtml += `
+              <div class="cell">
+                ${entriesHtml}
+
+                <button
+                  class="add-task-button"
+                  data-staff-index="${staffIndex}"
+                  data-date-key="${dateKey}"
+                >
+                  ${translate("addTimeTask")}
+                </button>
+              </div>
+            `;
+          }
+        }
+      );
+
+      element("shiftGrid").innerHTML =
+        gridHtml;
+
+      document
+        .querySelectorAll(".add-task-button")
+        .forEach(function (button) {
+          button.addEventListener(
+            "click",
+            function () {
+              openShiftEditor(
+                Number(
+                  button.dataset.staffIndex
+                ),
+                button.dataset.dateKey
+              );
+            }
+          );
+        });
+
+      document
+        .querySelectorAll(
+          ".delete-staff-button"
+        )
+        .forEach(function (button) {
+          button.addEventListener(
+            "click",
+            function () {
+              deleteStaff(
+                Number(
+                  button.dataset.staffIndex
+                )
+              );
+            }
+          );
+        });
+    }
+
+    function getMobileDates() {
+      if (mobileDisplayMode === "today") {
+        return [new Date()];
+      }
+
+      const dates = [];
+
+      for (
+        let index = 0;
+        index < 7;
+        index++
+      ) {
+        const date =
+          new Date(currentMonday);
+
+        date.setDate(
+          date.getDate() + index
+        );
+
+        dates.push(date);
+      }
+
+      return dates;
+    }
+
+    function renderMobileSchedule() {
+      const dates = getMobileDates();
+
+      element("mobileBoard").innerHTML =
+        dates.map(function (date) {
+          const dateKey =
+            createDateKey(date);
+
+          const staffCards =
+            appData.staff.map(
+              function (
+                staffName,
+                staffIndex
+              ) {
+                const cellKey =
+                  `${staffIndex}|${dateKey}`;
+
+                const entries =
+                  appData.shifts[cellKey] || [];
+
+                const entriesHtml =
+                  entries.length
+                    ? entries.map(
+                        function (
+                          entry,
+                          entryIndex
+                        ) {
+                          return createShiftEntryHtml(
+                            entry,
+                            staffIndex,
+                            dateKey,
+                            entryIndex
+                          );
+                        }
+                      ).join("")
+                    : `
+                      <div class="no-shift">
+                        ${translate("noShift")}
+                      </div>
+                    `;
+
+                return `
+                  <div class="mobile-staff-card">
+                    <div
+                      class="mobile-staff-header"
+                    >
+                      <div
+                        class="mobile-staff-name"
+                      >
+                        ${escapeHtml(staffName)}
+                      </div>
+
+                      <button
+                        class="mobile-add-button"
+                        data-mobile-staff-index=
+                          "${staffIndex}"
+                        data-mobile-date-key=
+                          "${dateKey}"
+                      >
+                        ${translate("add")}
+                      </button>
+                    </div>
+
+                    ${entriesHtml}
+                  </div>
+                `;
+              }
+            ).join("");
+
+          const dayNumber =
+            (date.getDay() + 6) % 7;
+
+          return `
+            <article class="mobile-day-card">
+              <div class="mobile-day-header">
+                <h2>
+                  ${translate(
+                    "days"
+                  )[dayNumber]}
+                </h2>
+
+                <span class="mobile-date">
+                  ${displayDate(date)}
+                </span>
+              </div>
+
+              <div class="mobile-day-content">
+                ${staffCards}
+              </div>
+            </article>
+          `;
+        }).join("");
+
+      document
+        .querySelectorAll(
+          ".mobile-add-button"
+        )
+        .forEach(function (button) {
+          button.addEventListener(
+            "click",
+            function () {
+              openShiftEditor(
+                Number(
+                  button.dataset
+                    .mobileStaffIndex
+                ),
+                button.dataset
+                  .mobileDateKey
+              );
+            }
+          );
+        });
+    }
+
+    function activateCopyButtons() {
+      document
+        .querySelectorAll(
+          ".copy-next-day-button"
+        )
+        .forEach(function (button) {
+          button.addEventListener(
+            "click",
+            function (event) {
+              event.stopPropagation();
+
+              copyShiftToNextDay(
+                Number(
+                  button.dataset
+                    .copyStaffIndex
+                ),
+                button.dataset
+                  .copyDateKey,
+                Number(
+                  button.dataset
+                    .copyEntryIndex
+                )
+              );
+            }
+          );
+        });
+    }
+
+    function copyShiftToNextDay(
+      staffIndex,
+      sourceDateKey,
+      entryIndex
+    ) {
+      const sourceCellKey =
+        `${staffIndex}|${sourceDateKey}`;
+
+      const sourceEntries =
+        appData.shifts[sourceCellKey] || [];
+
+      const sourceEntry =
+        sourceEntries[entryIndex];
+
+      if (!sourceEntry) {
+        return;
+      }
+
+      if (
+        !confirm(
+          translate("copyConfirmation")
+        )
+      ) {
+        return;
+      }
+
+      const sourceDate =
+        new Date(
+          `${sourceDateKey}T00:00:00`
+        );
+
+      sourceDate.setDate(
+        sourceDate.getDate() + 1
+      );
+
+      const nextDateKey =
+        createDateKey(sourceDate);
+
+      const destinationCellKey =
+        `${staffIndex}|${nextDateKey}`;
+
+      if (
+        !appData.shifts[
+          destinationCellKey
+        ]
+      ) {
+        appData.shifts[
+          destinationCellKey
+        ] = [];
+      }
+
+      const duplicateExists =
+        appData.shifts[
+          destinationCellKey
+        ].some(function (entry) {
+          return (
+            entry.start ===
+              sourceEntry.start &&
+            entry.end ===
+              sourceEntry.end &&
+            entry.taskId ===
+              sourceEntry.taskId &&
+            (entry.meetingPerson || "") ===
+              (
+                sourceEntry.meetingPerson ||
+                ""
+              ) &&
+            (entry.memo || "") ===
+              (sourceEntry.memo || "")
+          );
+        });
+
+      if (duplicateExists) {
+        alert(
+          translate("duplicateShift")
+        );
+        return;
+      }
+
+      appData.shifts[
+        destinationCellKey
+      ].push({
+        start: sourceEntry.start,
+        end: sourceEntry.end,
+        taskId: sourceEntry.taskId,
+        meetingPerson:
+          sourceEntry.meetingPerson || "",
+        memo: sourceEntry.memo || ""
+      });
+
+      appData.shifts[
+        destinationCellKey
+      ].sort(function (first, second) {
+        return (
+          timeToMinutes(first.start) -
+          timeToMinutes(second.start)
+        );
+      });
+
+      saveData();
+      render();
+
+      showToast(
+        translate("copySuccess")
+      );
+    }
+
+    function updateDisplayButtons() {
+      element("todayButton")
+        .classList.toggle(
+          "active",
+          mobileDisplayMode === "today"
+        );
+
+      element("weekButton")
+        .classList.toggle(
+          "active",
+          mobileDisplayMode === "week"
+        );
+
+      element("staffViewButton")
+        .classList.toggle(
+          "active",
+          selectedView === "staff"
+        );
+
+      element("dayViewButton")
+        .classList.toggle(
+          "active",
+          selectedView === "day"
+        );
+    }
+
+    function applySelectedView() {
+      if (selectedView === "staff") {
+        element("desktopBoard")
+          .style.display = "block";
+
+        element("mobileBoard")
+          .style.display = "none";
+
+        return;
+      }
+
+      if (selectedView === "day") {
+        element("desktopBoard")
+          .style.display = "none";
+
+        element("mobileBoard")
+          .style.display = "block";
+
+        return;
+      }
+
+      if (window.innerWidth <= 700) {
+        element("desktopBoard")
+          .style.display = "none";
+
+        element("mobileBoard")
+          .style.display = "block";
+      } else {
+        element("desktopBoard")
+          .style.display = "block";
+
+        element("mobileBoard")
+          .style.display = "none";
+      }
+    }
+
+    function openShiftEditor(
+      staffIndex,
+      dateKey
+    ) {
+      activeCell = {
+        staffIndex: staffIndex,
+        dateKey: dateKey
+      };
+
+      element("editorTitle").textContent =
+        `${translate("editShift")}: ` +
+        `${appData.staff[staffIndex]}`;
+
+      element("editorDate").textContent =
+        displayFullDate(dateKey);
+
+      element("newTaskLabel").textContent =
+        translate("addAnotherTask");
+
+      element("startLabel").textContent =
+        translate("start");
+
+      element("endLabel").textContent =
+        translate("end");
+
+      element("taskLabel").textContent =
+        translate("task");
+
+      element(
+        "meetingPersonLabel"
+      ).textContent =
+        translate("meetingPerson");
+
+      element("meetingPerson").placeholder =
+        translate(
+          "meetingPersonPlaceholder"
+        );
+
+      element("memoLabel").textContent =
+        translate("memo");
+
+      element("memoInput").placeholder =
+        translate("memoPlaceholder");
+
+      element("closeButton").textContent =
+        translate("close");
+
+      element("addEntryButton").textContent =
+        translate("add");
+
+      const timeOptions =
+        createTimeOptions();
+
+      element("startTime").innerHTML =
+        timeOptions;
+
+      element("endTime").innerHTML =
+        timeOptions;
+
+      element("startTime").value =
+        "17:00";
+
+      element("endTime").value =
+        "24:00";
+
+      element("taskSelector").innerHTML =
+        translate("tasks").map(
+          function (task) {
+            return `
+              <option value="${task.id}">
+                ${task.name}
+              </option>
+            `;
+          }
+        ).join("");
+
+      element("taskSelector").value =
+        "floor";
+
+      element("meetingPerson").value =
+        "";
+
+      element("memoInput").value =
+        "";
+
+      handleTaskChange();
+      renderExistingEntries();
+
+      element("shiftEditor").showModal();
+    }
+
+    function handleTaskChange() {
+      const taskId =
+        element("taskSelector").value;
+
+      if (taskId === "meeting") {
+        element("meetingArea")
+          .classList.add("show");
+      } else {
+        element("meetingArea")
+          .classList.remove("show");
+
+        element("meetingPerson").value =
+          "";
+      }
+    }
+
+    function renderExistingEntries() {
+      const cellKey =
+        `${activeCell.staffIndex}|` +
+        `${activeCell.dateKey}`;
+
+      const entries =
+        appData.shifts[cellKey] || [];
+
+      element("existingEntries").innerHTML =
+        entries.map(
+          function (entry, entryIndex) {
+            let extraInformation = "";
+
+            if (
+              entry.taskId === "meeting" &&
+              entry.meetingPerson
+            ) {
+              extraInformation +=
+                ` / ${translate(
+                  "meetingWith"
+                )}: ${escapeHtml(
+                  entry.meetingPerson
+                )}`;
+            }
+
+            if (entry.memo) {
+              extraInformation +=
+                ` / ${escapeHtml(
+                  entry.memo
+                )}`;
+            }
+
+            return `
+              <div class="existing-entry">
+                <span>
+                  <strong>
+                    ${entry.start} -
+                    ${entry.end}
+                  </strong>
+
+                  ${escapeHtml(
+                    getTaskName(
+                      entry.taskId
+                    )
+                  )}
+
+                  ${extraInformation}
+                </span>
+
+                <button
+                  class="danger-button"
+                  data-entry-index=
+                    "${entryIndex}"
+                >
+                  ${translate("delete")}
+                </button>
+              </div>
+            `;
+          }
+        ).join("");
+
+      document
+        .querySelectorAll(
+          ".danger-button"
+        )
+        .forEach(function (button) {
+          button.addEventListener(
+            "click",
+            function () {
+              removeShiftEntry(
+                Number(
+                  button.dataset.entryIndex
+                )
+              );
+            }
+          );
+        });
+    }
+
+    function addShiftEntry() {
+      const start =
+        element("startTime").value;
+
+      const end =
+        element("endTime").value;
+
+      const taskId =
+        element("taskSelector").value;
+
+      const meetingPerson =
+        element("meetingPerson")
+          .value.trim();
+
+      const memo =
+        element("memoInput")
+          .value.trim();
+
+      if (
+        timeToMinutes(end) <=
+        timeToMinutes(start)
+      ) {
+        alert(translate("invalidTime"));
+        return;
+      }
+
+      if (
+        taskId === "meeting" &&
+        !meetingPerson
+      ) {
+        alert(
+          translate(
+            "meetingPersonRequired"
+          )
+        );
+        return;
+      }
+
+      const cellKey =
+        `${activeCell.staffIndex}|` +
+        `${activeCell.dateKey}`;
+
+      if (!appData.shifts[cellKey]) {
+        appData.shifts[cellKey] = [];
+      }
+
+      appData.shifts[cellKey].push({
+        start: start,
+        end: end,
+        taskId: taskId,
+        meetingPerson:
+          taskId === "meeting"
+            ? meetingPerson
+            : "",
+        memo: memo
+      });
+
+      appData.shifts[cellKey].sort(
+        function (first, second) {
+          return (
+            timeToMinutes(first.start) -
+            timeToMinutes(second.start)
+          );
+        }
+      );
+
+      saveData();
+      renderExistingEntries();
+      render();
+
+      element("meetingPerson").value =
+        "";
+
+      element("memoInput").value =
+        "";
+    }
+
+    function removeShiftEntry(entryIndex) {
+      if (
+        !confirm(
+          translate("deleteConfirmation")
+        )
+      ) {
+        return;
+      }
+
+      const cellKey =
+        `${activeCell.staffIndex}|` +
+        `${activeCell.dateKey}`;
+
+      appData.shifts[cellKey].splice(
+        entryIndex,
+        1
+      );
+
+      if (
+        appData.shifts[cellKey].length === 0
+      ) {
+        delete appData.shifts[cellKey];
+      }
+
+      saveData();
+      renderExistingEntries();
+      render();
+    }
+
+    function addStaff() {
+      if (appData.staff.length >= 10) {
+        alert(
+          translate("maximumStaff")
+        );
+        return;
+      }
+
+      const staffName =
+        prompt(
+          translate("enterStaffName")
+        );
+
+      if (
+        !staffName ||
+        !staffName.trim()
+      ) {
+        return;
+      }
+
+      appData.staff.push(
+        staffName.trim()
+      );
+
+      saveData();
+      render();
+    }
+
+    function deleteStaff(staffIndex) {
+      if (appData.staff.length <= 1) {
+        alert(
+          translate("minimumStaff")
+        );
+        return;
+      }
+
+      const staffName =
+        appData.staff[staffIndex];
+
+      const message =
+        translate(
+          "deleteStaffConfirmation"
+        ).replace(
+          "{name}",
+          staffName
+        );
+
+      if (!confirm(message)) {
+        return;
+      }
+
+      const updatedShifts = {};
+
+      Object.keys(
+        appData.shifts
+      ).forEach(function (key) {
+        const parts = key.split("|");
+
+        const existingIndex =
+          Number(parts[0]);
+
+        const dateKey = parts[1];
+
+        if (
+          existingIndex < staffIndex
+        ) {
+          updatedShifts[key] =
+            appData.shifts[key];
+        }
+
+        if (
+          existingIndex > staffIndex
+        ) {
+          const newKey =
+            `${existingIndex - 1}|` +
+            `${dateKey}`;
+
+          updatedShifts[newKey] =
+            appData.shifts[key];
+        }
+      });
+
+      appData.staff.splice(
+        staffIndex,
+        1
+      );
+
+      appData.shifts =
+        updatedShifts;
+
+      saveData();
+      render();
+    }
+
+    function moveWeek(numberOfDays) {
+      currentMonday.setDate(
+        currentMonday.getDate() +
+          numberOfDays
+      );
+
+      render();
+    }
+
+    function showToday() {
+      mobileDisplayMode = "today";
+      selectedView = "day";
+      render();
+    }
+
+    function showThisWeek() {
+      mobileDisplayMode = "week";
+      render();
+    }
+
+    function showStaffView() {
+      selectedView = "staff";
+      render();
+    }
+
+    function showDayView() {
+      selectedView = "day";
+      render();
+    }
+
+    element("languageSelector")
+      .addEventListener(
+        "change",
+        function (event) {
+          setLanguage(
+            event.target.value
+          );
+        }
+      );
+
+    element("addStaffButton")
+      .addEventListener(
+        "click",
+        addStaff
+      );
+
+    element("printButton")
+      .addEventListener(
+        "click",
+        function () {
+          window.print();
+        }
+      );
+
+    element("previousWeekButton")
+      .addEventListener(
+        "click",
+        function () {
+          moveWeek(-7);
+        }
+      );
+
+    element("nextWeekButton")
+      .addEventListener(
+        "click",
+        function () {
+          moveWeek(7);
+        }
+      );
+
+    element("todayButton")
+      .addEventListener(
+        "click",
+        showToday
+      );
+
+    element("weekButton")
+      .addEventListener(
+        "click",
+        showThisWeek
+      );
+
+    element("staffViewButton")
+      .addEventListener(
+        "click",
+        showStaffView
+      );
+
+    element("dayViewButton")
+      .addEventListener(
+        "click",
+        showDayView
+      );
+
+    element("taskSelector")
+      .addEventListener(
+        "change",
+        handleTaskChange
+      );
+
+    element("closeButton")
+      .addEventListener(
+        "click",
+        function () {
+          element(
+            "shiftEditor"
+          ).close();
+        }
+      );
+
+    element("addEntryButton")
+      .addEventListener(
+        "click",
+        addShiftEntry
+      );
+
+    window.addEventListener(
+      "resize",
+      function () {
+        if (
+          selectedView === "automatic"
+        ) {
+          applySelectedView();
+        }
+      }
+    );
+
+    render();
+  </script>
+</body>
+</html>

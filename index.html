@@ -814,7 +814,7 @@
     "use strict";
     import {initializeApp} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
     import {getFirestore,doc,setDoc,onSnapshot,serverTimestamp,getDoc,collection,getDocs,deleteDoc} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
-    import {getAuth,GoogleAuthProvider,signInWithPopup,getRedirectResult,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+    import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
     const firebaseConfig={apiKey:"AIzaSyBeDNRp1p16xqERcQMBt4KxrV1f53VIWcM",authDomain:"shift-apps-feed0.firebaseapp.com",projectId:"shift-apps-feed0",storageBucket:"shift-apps-feed0.firebasestorage.app",messagingSenderId:"349916741692",appId:"1:349916741692:web:aac4f43323cc698501c339"};
     const BOOTSTRAP_ADMIN_EMAIL="seeeesaaaa20@gmail.com";
     const DEFAULT_SETTINGS={title:"週間シフト表",subtitle:"小規模飲食店向けシフト管理",description:"共有シフト表です。"}
@@ -929,7 +929,7 @@
     let appData = loadData();
     let currentMonday = getMonday(new Date());
     let activeCell = null;
-    let editing EntryIndex = null;
+    let editingEntryIndex = null;
     let mobileDisplayMode = "week";
     let selectedView = "automatic";
 
@@ -1626,7 +1626,7 @@
     "click",
     function (event) {
     if (!isManager) return;
-     
+     
     if (
     event.target.closest(
     ".copy-next-day-button"
@@ -1634,7 +1634,7 @@
     ) {
     return;
     }
-     
+     
     openShiftEditor(
     Number(
     entryElement.dataset
@@ -1930,7 +1930,7 @@
 
               const cellKey =
         `${staffIndex}|${dateKey}`;
-         
+         
         const editingEntry =
         entryIndex !== null
         ? (
@@ -1938,41 +1938,41 @@
         []
         )[entryIndex]
         : null;
-         
+         
         if (editingEntry) {
         element("startTime").value =
         editingEntry.start;
-         
+         
         element("endTime").value =
         editingEntry.end;
-         
+         
         element("taskSelector").value =
         editingEntry.taskId;
-         
+         
         element("meetingPerson").value =
         editingEntry.meetingPerson || "";
-         
+         
         element("memoInput").value =
         editingEntry.memo || "";
-         
+         
         element("addEntryButton").textContent =
         "変更を保存";
-         
+         
         element("newTaskLabel").textContent =
         "予定を編集";
         } else {
         element("taskSelector").value =
         "floor";
-         
+         
         element("meetingPerson").value =
         "";
-         
+         
         element("memoInput").value =
         "";
-         
+         
         element("addEntryButton").textContent =
         translate("add");
-         
+         
         element("newTaskLabel").textContent =
         translate("addAnotherTask");
         }

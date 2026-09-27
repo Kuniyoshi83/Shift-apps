@@ -860,7 +860,7 @@
         thisWeek: "今週",
         staffView: "スタッフ表示",
         dayView: "曜日表示",
-        copyNextDay: "翌日にコピー",
+        copyNextDay: "日付を選んでコピー",
         copyConfirmation: "この予定を翌日にコピーしますか？",
         copySuccess: "翌日にコピーしました。",
         duplicateShift: "翌日に同じ予定がすでに登録されています。",
@@ -1680,111 +1680,73 @@
         });
     }
 
-    function copyShiftToNextDay(
-      staffIndex,
-      sourceDateKey,
-      entryIndex
-    ) {
-      if(!isManager)return;
-      const sourceCellKey =
-        `${staffIndex}|${sourceDateKey}`;
-
-      const sourceEntries =
-        appData.shifts[sourceCellKey] || [];
-
-      const sourceEntry =
-        sourceEntries[entryIndex];
-
-      if (!sourceEntry) {
-        return;
-      }
-
-      if (
-        !confirm(
-          translate("copyConfirmation")
-        )
-      ) {
-        return;
-      }
-
-      const sourceDate =
-        new Date(
-          `${sourceDateKey}T00:00:00`
-        );
-
-      sourceDate.setDate(
-        sourceDate.getDate() + 1
+    function copyShiftToNextDay(staffIndex, sourceDateKey, entryIndex) {
+      if (!isManager) return;
+    
+      const sourceCellKey = `${staffIndex}|${sourceDateKey}`;
+      const sourceEntry = (appData.shifts[sourceCellKey] || [])[entryIndex];
+    
+      if (!sourceEntry) return;
+    
+      const defaultDate = new Date(`${sourceDateKey}T00:00:00`);
+      defaultDate.setDate(defaultDate.getDate() + 1);
+    
+      const targetDateKey = prompt(
+        "コピー先の日付を入力してください（YYYY-MM-DD）",
+        createDateKey(defaultDate)
       );
-
-      const nextDateKey =
-        createDateKey(sourceDate);
-
-      const destinationCellKey =
-        `${staffIndex}|${nextDateKey}`;
-
-      if (
-        !appData.shifts[
-          destinationCellKey
-        ]
-      ) {
-        appData.shifts[
-          destinationCellKey
-        ] = [];
+    
+      if (!targetDateKey) return;
+    
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDateKey)) {
+        alert("日付はYYYY-MM-DD形式で入力してください。");
+        return;
       }
-
+    
+      const destinationCellKey = `${staffIndex}|${targetDateKey}`;
+    
+      if (!appData.shifts[destinationCellKey]) {
+        appData.shifts[destinationCellKey] = [];
+      }
+    
       const duplicateExists =
-        appData.shifts[
-          destinationCellKey
-        ].some(function (entry) {
+        appData.shifts[destinationCellKey].some(function (entry) {
           return (
-            entry.start ===
-              sourceEntry.start &&
-            entry.end ===
-              sourceEntry.end &&
-            entry.taskId ===
-              sourceEntry.taskId &&
+            entry.start === sourceEntry.start &&
+            entry.end === sourceEntry.end &&
+            entry.taskId === sourceEntry.taskId &&
             (entry.meetingPerson || "") ===
-              (
-                sourceEntry.meetingPerson ||
-                ""
-              ) &&
+              (sourceEntry.meetingPerson || "") &&
             (entry.memo || "") ===
               (sourceEntry.memo || "")
           );
         });
-
+    
       if (duplicateExists) {
-        alert(
-          translate("duplicateShift")
-        );
+        alert("コピー先の日付に同じ予定があります。");
         return;
       }
-
-      appData.shifts[
-        destinationCellKey
-      ].push({
+    
+      appData.shifts[destinationCellKey].push({
         start: sourceEntry.start,
         end: sourceEntry.end,
         taskId: sourceEntry.taskId,
-        meetingPerson:
-          sourceEntry.meetingPerson || "",
+        meetingPerson: sourceEntry.meetingPerson || "",
         memo: sourceEntry.memo || ""
       });
-
-      appData.shifts[
-        destinationCellKey
-      ].sort(function (first, second) {
+    
+      appData.shifts[destinationCellKey].sort(function (first, second) {
         return (
           timeToMinutes(first.start) -
           timeToMinutes(second.start)
         );
       });
-
+    
       saveData();
       render();
-
+    
       showToast(
-        translate("copySuccess")
+        `${targetDateKey}にコピーしました。`
       );
     }
 

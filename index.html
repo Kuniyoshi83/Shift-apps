@@ -692,6 +692,9 @@
     .google-login-button{width:100%;margin-top:12px;background:#16423c;color:#fff;padding:13px}.login-error{min-height:22px;margin-top:12px;color:#b42318;font-size:13px}
     .app-shell{display:none}.app-shell.show{display:block}.auth-info{font-size:12px;opacity:.9;overflow-wrap:anywhere}
     .viewer-notice{display:none;padding:10px 12px;margin-bottom:12px;border-radius:10px;background:#fff3cd;color:#664d03;font-size:13px}.viewer-notice.show{display:block}.hidden{display:none!important}
+
+    .admin-button{background:#fff;color:#16423c}.admin-card{margin-bottom:12px;padding:16px;background:#fff;border-radius:14px;box-shadow:0 6px 20px rgba(22,66,60,.08)}
+    .admin-card h2{margin:0 0 12px;font-size:18px}.admin-form{display:grid;grid-template-columns:1fr 160px auto;gap:8px}.admin-form input,.admin-form select,.settings-form input,.settings-form textarea{width:100%;padding:10px;border:1px solid #ccd5d1;border-radius:8px}.settings-form{display:grid;gap:10px}.settings-form textarea{min-height:90px;resize:vertical}.user-row{display:grid;grid-template-columns:1fr 120px auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #e4e8e6}.user-row:last-child{border-bottom:0}.admin-panel{display:none}.admin-panel.show{display:block}.site-description{margin:0 0 12px;padding:12px;background:#eef4f1;border-radius:10px;white-space:pre-wrap}.small-danger{background:#fee2e2;color:#991b1b}.small-save{background:#16423c;color:#fff}@media(max-width:700px){.admin-form,.user-row{grid-template-columns:1fr}.admin-card{padding:12px}}
   </style>
 </head>
 
@@ -717,6 +720,7 @@
 
         <button id="addStaffButton"></button>
         <button id="printButton"></button>
+        <button id="adminPanelButton" class="admin-button hidden">管理画面</button>
         <button id="logoutButton">ログアウト</button>
         <span id="authInfo" class="auth-info"></span>
       </div>
@@ -725,6 +729,11 @@
 
   <main>
     <div id="viewerNotice" class="viewer-notice"></div>
+    <div id="siteDescription" class="site-description"></div>
+    <section id="adminPanel" class="admin-panel">
+      <div class="admin-card"><h2>サイト設定</h2><div class="settings-form"><input id="settingTitle" placeholder="サイト名"><input id="settingSubtitle" placeholder="サブタイトル"><textarea id="settingDescription" placeholder="説明文"></textarea><button id="saveSettingsButton" class="small-save">設定を保存</button></div></div>
+      <div class="admin-card"><h2>ユーザー管理</h2><div class="admin-form"><input id="newUserEmail" type="email" placeholder="Googleメールアドレス"><select id="newUserRole"><option value="viewer">閲覧者</option><option value="admin">管理者</option></select><button id="addUserButton" class="small-save">追加</button></div><div id="userList"></div></div>
+    </section>
     <div class="toolbar">
       <div class="week-navigation">
         <button id="previousWeekButton">‹</button>
@@ -803,13 +812,13 @@
   <script type="module">
     "use strict";
     import {initializeApp} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-    import {getFirestore,doc,setDoc,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+    import {getFirestore,doc,setDoc,onSnapshot,serverTimestamp,getDoc,collection,getDocs,deleteDoc} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
     import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
     const firebaseConfig={apiKey:"AIzaSyBeDNRp1p16xqERcQMBt4KxrV1f53VIWcM",authDomain:"shift-apps-feed0.firebaseapp.com",projectId:"shift-apps-feed0",storageBucket:"shift-apps-feed0.firebasestorage.app",messagingSenderId:"349916741692",appId:"1:349916741692:web:aac4f43323cc698501c339"};
-    const MANAGER_EMAILS=["seeeesaaaa20@gmail.com"];
-    const VIEWER_EMAILS=[]; // 例: ["tencho@gmail.com","staff1@gmail.com"]
-    const firebaseApp=initializeApp(firebaseConfig),db=getFirestore(firebaseApp),auth=getAuth(firebaseApp),provider=new GoogleAuthProvider(),sharedShiftRef=doc(db,"shift","main");
-    let currentUser=null,isManager=false,isAuthorized=false,cloudReady=false,applyingRemoteUpdate=false,unsubscribeFromCloud=null;
+    const BOOTSTRAP_ADMIN_EMAIL="seeeesaaaa20@gmail.com";
+    const DEFAULT_SETTINGS={title:"週間シフト表",subtitle:"小規模飲食店向けシフト管理",description:"共有シフト表です。"}
+    const firebaseApp=initializeApp(firebaseConfig),db=getFirestore(firebaseApp),auth=getAuth(firebaseApp),provider=new GoogleAuthProvider(),sharedShiftRef=doc(db,"shift","main"),siteSettingsRef=doc(db,"settings","site");
+    let currentUser=null,currentRole="",isManager=false,isAuthorized=false,cloudReady=false,applyingRemoteUpdate=false,unsubscribeFromCloud=null,siteSettings={...DEFAULT_SETTINGS};
 
     const translations = {
       ja: {
@@ -1188,24 +1197,39 @@
     function updateAccessUI(){
       element("loginScreen").style.display=currentUser&&isAuthorized?"none":"grid";
       element("appShell").classList.toggle("show",Boolean(currentUser&&isAuthorized));
-      element("authInfo").textContent=currentUser?currentUser.email:"";
+      element("authInfo").textContent=currentUser?`${currentUser.email} (${currentRole||"未登録"})`:"";
+      element("adminPanelButton").classList.toggle("hidden",!isManager);
       element("viewerNotice").textContent="閲覧モードです。編集は管理者のみ可能です。";
+      element("pageTitle").textContent=siteSettings.title;
+      element("subtitle").textContent=siteSettings.subtitle;
+      element("siteDescription").textContent=siteSettings.description;
       element("viewerNotice").classList.toggle("show",isAuthorized&&!isManager);
       document.querySelectorAll("#addStaffButton,.staff-chip-delete,.delete-staff-button,.add-task-button,.mobile-add-button,.copy-next-day-button").forEach(n=>n.classList.toggle("hidden",!isManager));
     }
     async function loginWithGoogle(){element("loginError").textContent="";try{await signInWithPopup(auth,provider)}catch(error){if(error&&(error.code==="auth/popup-blocked"||error.code==="auth/cancelled-popup-request")){await signInWithRedirect(auth,provider)}else{console.error(error);element("loginError").textContent="Googleログインに失敗しました。"}}}
+    async function loadUserRole(email){
+      const ref=doc(db,"users",email.toLowerCase());let snap=await getDoc(ref);
+      if(!snap.exists()&&email.toLowerCase()===BOOTSTRAP_ADMIN_EMAIL){await setDoc(ref,{email:email.toLowerCase(),role:"admin",active:true,createdAt:serverTimestamp()});snap=await getDoc(ref)}
+      return snap.exists()&&snap.data().active!==false?snap.data().role:"";
+    }
+    async function loadSettings(){const snap=await getDoc(siteSettingsRef);if(snap.exists())siteSettings={...DEFAULT_SETTINGS,...snap.data()};else if(isManager)await setDoc(siteSettingsRef,siteSettings)}
+    async function saveSettings(){if(!isManager)return;siteSettings={title:element("settingTitle").value.trim()||DEFAULT_SETTINGS.title,subtitle:element("settingSubtitle").value.trim(),description:element("settingDescription").value.trim()};await setDoc(siteSettingsRef,{...siteSettings,updatedAt:serverTimestamp()},{merge:true});render();showToast("サイト設定を保存しました。")}
+    async function renderUsers(){if(!isManager)return;const snap=await getDocs(collection(db,"users"));const rows=[];snap.forEach(d=>{const u=d.data();rows.push(`<div class="user-row"><span>${escapeHtml(u.email||d.id)}</span><select class="user-role" data-email="${escapeHtml(d.id)}"><option value="viewer" ${u.role==="viewer"?"selected":""}>閲覧者</option><option value="admin" ${u.role==="admin"?"selected":""}>管理者</option></select><button class="remove-user small-danger" data-email="${escapeHtml(d.id)}">削除</button></div>`)});element("userList").innerHTML=rows.join("");document.querySelectorAll(".user-role").forEach(x=>x.addEventListener("change",()=>setDoc(doc(db,"users",x.dataset.email),{email:x.dataset.email,role:x.value,active:true,updatedAt:serverTimestamp()},{merge:true})));document.querySelectorAll(".remove-user").forEach(x=>x.addEventListener("click",async()=>{if(x.dataset.email===BOOTSTRAP_ADMIN_EMAIL){alert("初期管理者は削除できません。");return}if(confirm(`${x.dataset.email} を削除しますか？`)){await deleteDoc(doc(db,"users",x.dataset.email));renderUsers()}}))}
+    async function addUser(){if(!isManager)return;const email=element("newUserEmail").value.trim().toLowerCase();if(!email){alert("メールアドレスを入力してください。");return}await setDoc(doc(db,"users",email),{email,role:element("newUserRole").value,active:true,createdAt:serverTimestamp()},{merge:true});element("newUserEmail").value="";await renderUsers();showToast("ユーザーを追加しました。")}
+    function toggleAdminPanel(){if(!isManager)return;const panel=element("adminPanel");panel.classList.toggle("show");if(panel.classList.contains("show")){element("settingTitle").value=siteSettings.title;element("settingSubtitle").value=siteSettings.subtitle;element("settingDescription").value=siteSettings.description;renderUsers()}}
+
     function startRealtimeSync(){if(!isAuthorized||unsubscribeFromCloud)return;unsubscribeFromCloud=onSnapshot(sharedShiftRef,async snapshot=>{cloudReady=true;if(snapshot.exists()&&snapshot.data().data){applyingRemoteUpdate=true;appData=snapshot.data().data;localStorage.setItem(storageKey,JSON.stringify(appData));render();applyingRemoteUpdate=false}else if(isManager){await saveData()}},error=>{console.error(error);cloudReady=false})}
-    async function initializeFirebase(){try{await getRedirectResult(auth)}catch(error){console.error(error)}onAuthStateChanged(auth,user=>{currentUser=user;const email=user?user.email:"";isManager=Boolean(email&&MANAGER_EMAILS.includes(email));isAuthorized=Boolean(email&&(isManager||VIEWER_EMAILS.includes(email)));if(unsubscribeFromCloud&&!isAuthorized){unsubscribeFromCloud();unsubscribeFromCloud=null;cloudReady=false}if(user&&!isAuthorized)element("loginError").textContent="このGoogleアカウントには利用権限がありません。";if(isAuthorized)startRealtimeSync();render();updateAccessUI()})}
+    async function initializeFirebase(){try{await getRedirectResult(auth)}catch(error){console.error(error)}onAuthStateChanged(auth,async user=>{currentUser=user;const email=user?user.email.toLowerCase():"";currentRole=email?await loadUserRole(email):"";isManager=currentRole==="admin";isAuthorized=currentRole==="admin"||currentRole==="viewer";if(unsubscribeFromCloud&&!isAuthorized){unsubscribeFromCloud();unsubscribeFromCloud=null;cloudReady=false}if(user&&!isAuthorized)element("loginError").textContent="このGoogleアカウントには利用権限がありません。";if(isAuthorized){await loadSettings();startRealtimeSync()}render();updateAccessUI()})}
 
     function render() {
       document.documentElement.lang =
         appData.language;
 
       element("pageTitle").textContent =
-        translate("title");
+        siteSettings.title;
 
       element("subtitle").textContent =
-        translate("subtitle");
+        siteSettings.subtitle;
 
       element("addStaffButton").textContent =
         translate("addStaff");
@@ -2303,6 +2327,9 @@
 
     element("loginButton").addEventListener("click",loginWithGoogle);
     element("logoutButton").addEventListener("click",()=>signOut(auth));
+    element("adminPanelButton").addEventListener("click",toggleAdminPanel);
+    element("saveSettingsButton").addEventListener("click",saveSettings);
+    element("addUserButton").addEventListener("click",addUser);
     render();
     initializeFirebase();
   </script>

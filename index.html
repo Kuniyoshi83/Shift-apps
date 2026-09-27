@@ -954,6 +954,7 @@
     let currentMonday = getMonday(new Date());
     let activeCell = null;
     let editingEntryIndex = null;
+    let pendingCopy = null;
     let mobileDisplayMode = "week";
     let selectedView = "automatic";
 
@@ -1706,51 +1707,59 @@
 
     function copyShiftToNextDay(staffIndex, sourceDateKey, entryIndex) {
       if (!isManager) return;
-    
+
       const sourceCellKey = `${staffIndex}|${sourceDateKey}`;
       const sourceEntry = (appData.shifts[sourceCellKey] || [])[entryIndex];
-    
       if (!sourceEntry) return;
-    
+
       const defaultDate = new Date(`${sourceDateKey}T00:00:00`);
       defaultDate.setDate(defaultDate.getDate() + 1);
-    
-      const targetDateKey = prompt(
-        "コピー先の日付を入力してください（YYYY-MM-DD）",
-        createDateKey(defaultDate)
-      );
-    
-      if (!targetDateKey) return;
-    
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDateKey)) {
-        alert("日付はYYYY-MM-DD形式で入力してください。");
+
+      pendingCopy = { staffIndex, sourceDateKey, entryIndex };
+      element("copyTargetDate").value = createDateKey(defaultDate);
+      element("copyDialog").showModal();
+    }
+
+    function cancelCopy() {
+      pendingCopy = null;
+      element("copyDialog").close();
+    }
+
+    function confirmCopy() {
+      if (!isManager || !pendingCopy) return;
+
+      const targetDateKey = element("copyTargetDate").value;
+      if (!targetDateKey) {
+        alert("コピー先の日付を選択してください。");
         return;
       }
-    
+
+      const { staffIndex, sourceDateKey, entryIndex } = pendingCopy;
+      const sourceCellKey = `${staffIndex}|${sourceDateKey}`;
+      const sourceEntry = (appData.shifts[sourceCellKey] || [])[entryIndex];
+      if (!sourceEntry) {
+        cancelCopy();
+        return;
+      }
+
       const destinationCellKey = `${staffIndex}|${targetDateKey}`;
-    
       if (!appData.shifts[destinationCellKey]) {
         appData.shifts[destinationCellKey] = [];
       }
-    
-      const duplicateExists =
-        appData.shifts[destinationCellKey].some(function (entry) {
-          return (
-            entry.start === sourceEntry.start &&
-            entry.end === sourceEntry.end &&
-            entry.taskId === sourceEntry.taskId &&
-            (entry.meetingPerson || "") ===
-              (sourceEntry.meetingPerson || "") &&
-            (entry.memo || "") ===
-              (sourceEntry.memo || "")
-          );
-        });
-    
+
+      const duplicateExists = appData.shifts[destinationCellKey].some(function (entry) {
+        return entry.start === sourceEntry.start &&
+          entry.end === sourceEntry.end &&
+          entry.taskId === sourceEntry.taskId &&
+          (entry.meetingPerson || "") === (sourceEntry.meetingPerson || "") &&
+          (entry.memo || "") === (sourceEntry.memo || "");
+      });
+
       if (duplicateExists) {
         alert("コピー先の日付に同じ予定があります。");
         return;
       }
-    
+
       appData.shifts[destinationCellKey].push({
         start: sourceEntry.start,
         end: sourceEntry.end,
@@ -1758,20 +1767,16 @@
         meetingPerson: sourceEntry.meetingPerson || "",
         memo: sourceEntry.memo || ""
       });
-    
+
       appData.shifts[destinationCellKey].sort(function (first, second) {
-        return (
-          timeToMinutes(first.start) -
-          timeToMinutes(second.start)
-        );
+        return timeToMinutes(first.start) - timeToMinutes(second.start);
       });
-    
+
+      pendingCopy = null;
+      element("copyDialog").close();
       saveData();
       render();
-    
-      showToast(
-        `${targetDateKey}にコピーしました。`
-      );
+      showToast(`${targetDateKey}にコピーしました。`);
     }
 
     function updateDisplayButtons() {
@@ -2412,6 +2417,8 @@
     element("adminPanelButton").addEventListener("click",toggleAdminPanel);
     element("saveSettingsButton").addEventListener("click",saveSettings);
     element("addUserButton").addEventListener("click",addUser);
+    element("copyConfirmButton").addEventListener("click",confirmCopy);
+    element("copyCancelButton").addEventListener("click",cancelCopy);
     render();
     initializeFirebase();
   </script>

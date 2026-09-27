@@ -695,6 +695,7 @@
 
     .admin-button{background:#fff;color:#16423c}.admin-card{margin-bottom:12px;padding:16px;background:#fff;border-radius:14px;box-shadow:0 6px 20px rgba(22,66,60,.08)}
     .admin-card h2{margin:0 0 12px;font-size:18px}.admin-form{display:grid;grid-template-columns:1fr 160px auto;gap:8px}.admin-form input,.admin-form select,.settings-form input,.settings-form textarea{width:100%;padding:10px;border:1px solid #ccd5d1;border-radius:8px}.settings-form{display:grid;gap:10px}.settings-form textarea{min-height:90px;resize:vertical}.user-row{display:grid;grid-template-columns:1fr 120px auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #e4e8e6}.user-row:last-child{border-bottom:0}.admin-panel{display:none}.admin-panel.show{display:block}.site-description{margin:0 0 12px;padding:12px;background:#eef4f1;border-radius:10px;white-space:pre-wrap}.small-danger{background:#fee2e2;color:#991b1b}.small-save{background:#16423c;color:#fff}@media(max-width:700px){.admin-form,.user-row{grid-template-columns:1fr}.admin-card{padding:12px}}
+    .shift-entry{cursor: pointer;}.shift-entry:hover {background: #f1f7f4;border-color: #9eb8ae;}.shift-entry:focus {outline: 3px solid rgba(22, 66, 60, 0.22);outline-offset: 2px;}  
   </style>
 </head>
 
@@ -928,6 +929,7 @@
     let appData = loadData();
     let currentMonday = getMonday(new Date());
     let activeCell = null;
+    let editing EntryIndex = null;
     let mobileDisplayMode = "week";
     let selectedView = "automatic";
 
@@ -1027,7 +1029,7 @@
         for (
           let minute = 0;
           minute < 60;
-          minute += 5
+          minute += 15
         ) {
           const hourText =
             String(hour).padStart(2, "0");
@@ -1151,10 +1153,15 @@
       }
 
       return `
-        <div
-          class="shift-entry
-          task-${entry.taskId}-border"
-        >
+          <div
+            class="shift-entry task-${entry.taskId}-border"
+            data-edit-staff-index="${staffIndex}"
+            data-edit-date-key="${dateKey}"
+            data-edit-entry-index="${entryIndex}"
+            role="button"
+            tabindex="0"
+            title="クリックして編集"
+            >
           <div class="shift-time">
             ${entry.start} - ${entry.end}
           </div>
@@ -1275,6 +1282,7 @@
       applySelectedView();
       updateDisplayButtons();
       activateCopyButtons();
+      activateEntryEditors();
       updateAccessUI();
     }
 
@@ -1610,6 +1618,40 @@
         });
     }
 
+    function activateEntryEditors() {
+    document
+    .querySelectorAll(".shift-entry")
+    .forEach(function (entryElement) {
+    entryElement.addEventListener(
+    "click",
+    function (event) {
+    if (!isManager) return;
+     
+    if (
+    event.target.closest(
+    ".copy-next-day-button"
+    )
+    ) {
+    return;
+    }
+     
+    openShiftEditor(
+    Number(
+    entryElement.dataset
+    .editStaffIndex
+    ),
+    entryElement.dataset
+    .editDateKey,
+    Number(
+    entryElement.dataset
+    .editEntryIndex
+    )
+    );
+    }
+    );
+    });
+    }
+    
     function activateCopyButtons() {
       document
         .querySelectorAll(
@@ -1810,8 +1852,10 @@
 
     function openShiftEditor(
       staffIndex,
-      dateKey
+      dateKey,
+      entryIndex = null
     ) {
+      editingEntryIndex = entryIndex;
       activeCell = {
         staffIndex: staffIndex,
         dateKey: dateKey
@@ -1884,14 +1928,54 @@
           }
         ).join("");
 
-      element("taskSelector").value =
+              const cellKey =
+        `${staffIndex}|${dateKey}`;
+         
+        const editingEntry =
+        entryIndex !== null
+        ? (
+        appData.shifts[cellKey] ||
+        []
+        )[entryIndex]
+        : null;
+         
+        if (editingEntry) {
+        element("startTime").value =
+        editingEntry.start;
+         
+        element("endTime").value =
+        editingEntry.end;
+         
+        element("taskSelector").value =
+        editingEntry.taskId;
+         
+        element("meetingPerson").value =
+        editingEntry.meetingPerson || "";
+         
+        element("memoInput").value =
+        editingEntry.memo || "";
+         
+        element("addEntryButton").textContent =
+        "変更を保存";
+         
+        element("newTaskLabel").textContent =
+        "予定を編集";
+        } else {
+        element("taskSelector").value =
         "floor";
-
-      element("meetingPerson").value =
+         
+        element("meetingPerson").value =
         "";
-
-      element("memoInput").value =
+         
+        element("memoInput").value =
         "";
+         
+        element("addEntryButton").textContent =
+        translate("add");
+         
+        element("newTaskLabel").textContent =
+        translate("addAnotherTask");
+        }
 
       handleTaskChange();
       renderExistingEntries();
@@ -2041,7 +2125,7 @@
         appData.shifts[cellKey] = [];
       }
 
-      appData.shifts[cellKey].push({
+            const updatedEntry = {
         start: start,
         end: end,
         taskId: taskId,
@@ -2050,7 +2134,17 @@
             ? meetingPerson
             : "",
         memo: memo
-      });
+      };
+      
+      if (editingEntryIndex !== null) {
+        appData.shifts[cellKey][
+          editingEntryIndex
+        ] = updatedEntry;
+      } else {
+        appData.shifts[cellKey].push(
+          updatedEntry
+        );
+      }
 
       appData.shifts[cellKey].sort(
         function (first, second) {
@@ -2061,6 +2155,7 @@
         }
       );
 
+      editingEntryIndex = null;
       saveData();
       renderExistingEntries();
       render();
@@ -2127,6 +2222,7 @@
         staffName.trim()
       );
 
+      editingEntryIndex = null;
       saveData();
       render();
     }

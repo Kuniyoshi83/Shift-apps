@@ -813,7 +813,7 @@
     "use strict";
     import {initializeApp} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
     import {getFirestore,doc,setDoc,onSnapshot,serverTimestamp,getDoc,collection,getDocs,deleteDoc} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
-    import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+    import {getAuth,GoogleAuthProvider,signInWithPopup,getRedirectResult,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
     const firebaseConfig={apiKey:"AIzaSyBeDNRp1p16xqERcQMBt4KxrV1f53VIWcM",authDomain:"shift-apps-feed0.firebaseapp.com",projectId:"shift-apps-feed0",storageBucket:"shift-apps-feed0.firebasestorage.app",messagingSenderId:"349916741692",appId:"1:349916741692:web:aac4f43323cc698501c339"};
     const BOOTSTRAP_ADMIN_EMAIL="seeeesaaaa20@gmail.com";
     const DEFAULT_SETTINGS={title:"週間シフト表",subtitle:"小規模飲食店向けシフト管理",description:"共有シフト表です。"}
@@ -1206,7 +1206,7 @@
       element("viewerNotice").classList.toggle("show",isAuthorized&&!isManager);
       document.querySelectorAll("#addStaffButton,.staff-chip-delete,.delete-staff-button,.add-task-button,.mobile-add-button,.copy-next-day-button").forEach(n=>n.classList.toggle("hidden",!isManager));
     }
-    async function loginWithGoogle(){element("loginError").textContent="";try{await signInWithPopup(auth,provider)}catch(error){if(error&&(error.code==="auth/popup-blocked"||error.code==="auth/cancelled-popup-request")){await signInWithRedirect(auth,provider)}else{console.error(error);element("loginError").textContent="Googleログインに失敗しました。"}}}
+    async function loginWithGoogle(){element("loginError").textContent="";try{await signInWithPopup(auth, provider);}catch(error){console.error("Google sign-in failed", error);if(error&&error.code==="auth/popup-blocked"){element("loginError").textContent="ポップアップがブロックされました。Safariの設定でポップアップを許可して、もう一度お試しください。";return;}if (error && error.code === "auth/popup-closed-by-user") {element("loginError").textContent ="ログイン画面が閉じられました。もう一度お試しください。";return;}if (error && error.code === "auth/unauthorized-domain") {element("loginError").textContent ="このサイトのドメインがFirebaseで承認されていません。";return;}element("loginError").textContent ="Googleログインに失敗しました。LINE内ではなくSafariでサイトを開いて、もう一度お試しください。";}}
     async function loadUserRole(email){
       const ref=doc(db,"users",email.toLowerCase());let snap=await getDoc(ref);
       if(!snap.exists()&&email.toLowerCase()===BOOTSTRAP_ADMIN_EMAIL){await setDoc(ref,{email:email.toLowerCase(),role:"admin",active:true,createdAt:serverTimestamp()});snap=await getDoc(ref)}
@@ -1219,7 +1219,7 @@
     function toggleAdminPanel(){if(!isManager)return;const panel=element("adminPanel");panel.classList.toggle("show");if(panel.classList.contains("show")){element("settingTitle").value=siteSettings.title;element("settingSubtitle").value=siteSettings.subtitle;element("settingDescription").value=siteSettings.description;renderUsers()}}
 
     function startRealtimeSync(){if(!isAuthorized||unsubscribeFromCloud)return;unsubscribeFromCloud=onSnapshot(sharedShiftRef,async snapshot=>{cloudReady=true;if(snapshot.exists()&&snapshot.data().data){applyingRemoteUpdate=true;appData=snapshot.data().data;localStorage.setItem(storageKey,JSON.stringify(appData));render();applyingRemoteUpdate=false}else if(isManager){await saveData()}},error=>{console.error(error);cloudReady=false})}
-    async function initializeFirebase(){try{await getRedirectResult(auth)}catch(error){console.error(error)}onAuthStateChanged(auth,async user=>{currentUser=user;const email=user?user.email.toLowerCase():"";currentRole=email?await loadUserRole(email):"";isManager=currentRole==="admin";isAuthorized=currentRole==="admin"||currentRole==="viewer";if(unsubscribeFromCloud&&!isAuthorized){unsubscribeFromCloud();unsubscribeFromCloud=null;cloudReady=false}if(user&&!isAuthorized)element("loginError").textContent="このGoogleアカウントには利用権限がありません。";if(isAuthorized){await loadSettings();startRealtimeSync()}render();updateAccessUI()})}
+    async function initializeFirebase(){onAuthStateChanged(auth,async user=>{currentUser=user;const email=user?user.email.toLowerCase():"";currentRole=email?await loadUserRole(email):"";isManager=currentRole==="admin";isAuthorized=currentRole==="admin"||currentRole==="viewer";if(unsubscribeFromCloud&&!isAuthorized){unsubscribeFromCloud();unsubscribeFromCloud=null;cloudReady=false}if(user&&!isAuthorized)element("loginError").textContent="このGoogleアカウントには利用権限がありません。";if(isAuthorized){await loadSettings();startRealtimeSync()}render();updateAccessUI()})}
 
     function render() {
       document.documentElement.lang =

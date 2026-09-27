@@ -685,14 +685,19 @@
       }
     }
 
-    .auth-info { font-size: 12px; opacity: .9; }
-    .viewer-notice { display:none; padding:10px 12px; margin-bottom:12px; border-radius:10px; background:#fff3cd; color:#664d03; font-size:13px; }
-    .viewer-notice.show { display:block; }
-    .hidden { display:none !important; }
+    .login-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(145deg,#16423c,#2f6f63)}
+    .login-card{width:min(92vw,440px);padding:30px;border-radius:20px;background:#fff;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.25)}
+    .login-icon{width:72px;height:72px;margin:0 auto 16px;display:grid;place-items:center;border-radius:20px;background:#eaf2ef;font-size:36px}
+    .login-card h1{font-size:24px;margin:0 0 8px}.login-card p{color:#65716c;line-height:1.6}
+    .google-login-button{width:100%;margin-top:12px;background:#16423c;color:#fff;padding:13px}.login-error{min-height:22px;margin-top:12px;color:#b42318;font-size:13px}
+    .app-shell{display:none}.app-shell.show{display:block}.auth-info{font-size:12px;opacity:.9;overflow-wrap:anywhere}
+    .viewer-notice{display:none;padding:10px 12px;margin-bottom:12px;border-radius:10px;background:#fff3cd;color:#664d03;font-size:13px}.viewer-notice.show{display:block}.hidden{display:none!important}
   </style>
 </head>
 
 <body>
+  <section id="loginScreen" class="login-screen"><div class="login-card"><div class="login-icon">🍽️</div><h1>週間シフト表</h1><p>Googleアカウントでログインすると、共有シフト表を確認できます。</p><button id="loginButton" class="google-login-button">Googleでログイン</button><div id="loginError" class="login-error"></div></div></section>
+  <div id="appShell" class="app-shell">
   <header>
     <div class="header-content">
       <div class="brand">
@@ -712,7 +717,7 @@
 
         <button id="addStaffButton"></button>
         <button id="printButton"></button>
-        <button id="authButton"></button>
+        <button id="logoutButton">ログアウト</button>
         <span id="authInfo" class="auth-info"></span>
       </div>
     </div>
@@ -793,44 +798,18 @@
   </dialog>
 
   <div id="toast" class="toast"></div>
+  </div>
 
   <script type="module">
     "use strict";
-
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-    import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBeDNRp1p16xqERcQMBt4KxrV1f53VIWcM",
-      authDomain: "shift-apps-feed0.firebaseapp.com",
-      projectId: "shift-apps-feed0",
-      storageBucket: "shift-apps-feed0.firebasestorage.app",
-      messagingSenderId: "349916741692",
-      appId: "1:349916741692:web:aac4f43323cc698501c339"
-    };
-
-    const MANAGER_EMAILS = [
-      "seeeesaaaa20@gmail.com"
-    ];
-
-    // 閲覧を許可するGoogleアドレスを、カンマ区切りで追加してください。
-    const VIEWER_EMAILS = [
-      // "manager@example.com",
-      // "staff@example.com"
-    ];
-
-    const firebaseApp = initializeApp(firebaseConfig);
-    const db = getFirestore(firebaseApp);
-    const auth = getAuth(firebaseApp);
-    const provider = new GoogleAuthProvider();
-    const sharedShiftRef = doc(db, "shift", "main");
-    let isManager = false;
-    let isAuthorized = false;
-    let currentUser = null;
-    let cloudReady = false;
-    let applyingRemoteUpdate = false;
-    let unsubscribeFromCloud = null;
+    import {initializeApp} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+    import {getFirestore,doc,setDoc,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+    import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+    const firebaseConfig={apiKey:"AIzaSyBeDNRp1p16xqERcQMBt4KxrV1f53VIWcM",authDomain:"shift-apps-feed0.firebaseapp.com",projectId:"shift-apps-feed0",storageBucket:"shift-apps-feed0.firebasestorage.app",messagingSenderId:"349916741692",appId:"1:349916741692:web:aac4f43323cc698501c339"};
+    const MANAGER_EMAILS=["seeeesaaaa20@gmail.com"];
+    const VIEWER_EMAILS=[]; // 例: ["tencho@gmail.com","staff1@gmail.com"]
+    const firebaseApp=initializeApp(firebaseConfig),db=getFirestore(firebaseApp),auth=getAuth(firebaseApp),provider=new GoogleAuthProvider(),sharedShiftRef=doc(db,"shift","main");
+    let currentUser=null,isManager=false,isAuthorized=false,cloudReady=false,applyingRemoteUpdate=false,unsubscribeFromCloud=null;
 
     const translations = {
       ja: {
@@ -875,11 +854,6 @@
         copyConfirmation: "この予定を翌日にコピーしますか？",
         copySuccess: "翌日にコピーしました。",
         duplicateShift: "翌日に同じ予定がすでに登録されています。",
-        login: "Googleログイン",
-        logout: "ログアウト",
-        viewerNotice: "閲覧モードです。編集は管理者のみ可能です。",
-        managerMode: "管理者モード",
-        saveError: "クラウド保存に失敗しました。",
         tasks: [
           { id: "meeting", name: "ミーティング" },
           { id: "floor", name: "ホール" },
@@ -931,11 +905,6 @@
         copySuccess: "Copied to the next day.",
         duplicateShift:
           "The same schedule already exists on the next day.",
-        login: "Google sign in",
-        logout: "Sign out",
-        viewerNotice: "View-only mode. Only the manager can edit.",
-        managerMode: "Manager mode",
-        saveError: "Cloud save failed.",
         tasks: [
           { id: "meeting", name: "Meeting" },
           { id: "floor", name: "Floor" },
@@ -975,19 +944,10 @@
       };
     }
 
-    async function saveData() {
-      localStorage.setItem(storageKey, JSON.stringify(appData));
-      if (!cloudReady || !isManager || applyingRemoteUpdate) return;
-      try {
-        await setDoc(sharedShiftRef, {
-          data: appData,
-          updatedAt: serverTimestamp(),
-          updatedBy: currentUser ? currentUser.email : ""
-        }, { merge: true });
-      } catch (error) {
-        console.error("Cloud save failed", error);
-        alert(translate("saveError"));
-      }
+    async function saveData(){
+      localStorage.setItem(storageKey,JSON.stringify(appData));
+      if(!cloudReady||!isManager||applyingRemoteUpdate)return;
+      try{await setDoc(sharedShiftRef,{data:appData,updatedAt:serverTimestamp(),updatedBy:currentUser?currentUser.email:""},{merge:true})}catch(error){console.error(error);alert("クラウド保存に失敗しました。")}
     }
 
     function translate(key) {
@@ -1225,80 +1185,17 @@
       }, 2200);
     }
 
-    function updateAuthUI() {
-      element("authButton").textContent = currentUser ? translate("logout") : translate("login");
-      element("authInfo").textContent = isManager
-        ? `${translate("managerMode")}: ${currentUser.email}`
-        : (isAuthorized && currentUser ? currentUser.email : "");
-      element("viewerNotice").textContent = !currentUser
-        ? "Googleログインしてください。"
-        : (isAuthorized ? translate("viewerNotice") : "このGoogleアカウントには閲覧権限がありません。");
-      element("viewerNotice").classList.toggle("show", !isManager);
+    function updateAccessUI(){
+      element("loginScreen").style.display=currentUser&&isAuthorized?"none":"grid";
+      element("appShell").classList.toggle("show",Boolean(currentUser&&isAuthorized));
+      element("authInfo").textContent=currentUser?currentUser.email:"";
+      element("viewerNotice").textContent="閲覧モードです。編集は管理者のみ可能です。";
+      element("viewerNotice").classList.toggle("show",isAuthorized&&!isManager);
+      document.querySelectorAll("#addStaffButton,.staff-chip-delete,.delete-staff-button,.add-task-button,.mobile-add-button,.copy-next-day-button").forEach(n=>n.classList.toggle("hidden",!isManager));
     }
-
-    function updateEditPermissions() {
-      const selectors = ["#addStaffButton", ".staff-chip-delete", ".delete-staff-button", ".add-task-button", ".mobile-add-button", ".copy-next-day-button"];
-      document.querySelectorAll(selectors.join(",")).forEach(function(node) {
-        node.classList.toggle("hidden", !isManager);
-      });
-      updateAuthUI();
-    }
-
-    async function handleAuthButton() {
-      if (currentUser) {
-        await signOut(auth);
-        return;
-      }
-      try {
-        await signInWithPopup(auth, provider);
-      } catch (error) {
-        if (error && (error.code === "auth/popup-blocked" || error.code === "auth/cancelled-popup-request")) {
-          await signInWithRedirect(auth, provider);
-        } else {
-          console.error("Sign-in failed", error);
-          alert("Googleログインに失敗しました。");
-        }
-      }
-    }
-
-    function startRealtimeSync() {
-      if (!isAuthorized || unsubscribeFromCloud) return;
-      unsubscribeFromCloud = onSnapshot(sharedShiftRef, async function(snapshot) {
-        cloudReady = true;
-        if (snapshot.exists() && snapshot.data().data) {
-          applyingRemoteUpdate = true;
-          appData = snapshot.data().data;
-          localStorage.setItem(storageKey, JSON.stringify(appData));
-          render();
-          applyingRemoteUpdate = false;
-        } else if (isManager) {
-          await saveData();
-        } else {
-          render();
-        }
-      }, function(error) {
-        console.error("Realtime sync failed", error);
-        cloudReady = false;
-        render();
-      });
-    }
-
-    async function initializeFirebase() {
-      try { await getRedirectResult(auth); } catch (error) { console.error(error); }
-      onAuthStateChanged(auth, function(user) {
-        currentUser = user;
-        const email = user ? user.email : "";
-        isManager = Boolean(email && MANAGER_EMAILS.includes(email));
-        isAuthorized = Boolean(email && (isManager || VIEWER_EMAILS.includes(email)));
-        if (unsubscribeFromCloud && !isAuthorized) {
-          unsubscribeFromCloud();
-          unsubscribeFromCloud = null;
-          cloudReady = false;
-        }
-        if (isAuthorized) startRealtimeSync();
-        render();
-      });
-    }
+    async function loginWithGoogle(){element("loginError").textContent="";try{await signInWithPopup(auth,provider)}catch(error){if(error&&(error.code==="auth/popup-blocked"||error.code==="auth/cancelled-popup-request")){await signInWithRedirect(auth,provider)}else{console.error(error);element("loginError").textContent="Googleログインに失敗しました。"}}}
+    function startRealtimeSync(){if(!isAuthorized||unsubscribeFromCloud)return;unsubscribeFromCloud=onSnapshot(sharedShiftRef,async snapshot=>{cloudReady=true;if(snapshot.exists()&&snapshot.data().data){applyingRemoteUpdate=true;appData=snapshot.data().data;localStorage.setItem(storageKey,JSON.stringify(appData));render();applyingRemoteUpdate=false}else if(isManager){await saveData()}},error=>{console.error(error);cloudReady=false})}
+    async function initializeFirebase(){try{await getRedirectResult(auth)}catch(error){console.error(error)}onAuthStateChanged(auth,user=>{currentUser=user;const email=user?user.email:"";isManager=Boolean(email&&MANAGER_EMAILS.includes(email));isAuthorized=Boolean(email&&(isManager||VIEWER_EMAILS.includes(email)));if(unsubscribeFromCloud&&!isAuthorized){unsubscribeFromCloud();unsubscribeFromCloud=null;cloudReady=false}if(user&&!isAuthorized)element("loginError").textContent="このGoogleアカウントには利用権限がありません。";if(isAuthorized)startRealtimeSync();render();updateAccessUI()})}
 
     function render() {
       document.documentElement.lang =
@@ -1354,7 +1251,7 @@
       applySelectedView();
       updateDisplayButtons();
       activateCopyButtons();
-      updateEditPermissions();
+      updateAccessUI();
     }
 
     function renderStaffManagement() {
@@ -1722,7 +1619,7 @@
       sourceDateKey,
       entryIndex
     ) {
-      if (!isManager) return;
+      if(!isManager)return;
       const sourceCellKey =
         `${staffIndex}|${sourceDateKey}`;
 
@@ -2074,7 +1971,7 @@
     }
 
     function addShiftEntry() {
-      if (!isManager) return;
+      if(!isManager)return;
       const start =
         element("startTime").value;
 
@@ -2152,7 +2049,7 @@
     }
 
     function removeShiftEntry(entryIndex) {
-      if (!isManager) return;
+      if(!isManager)return;
       if (
         !confirm(
           translate("deleteConfirmation")
@@ -2182,7 +2079,7 @@
     }
 
     function addStaff() {
-      if (!isManager) return;
+      if(!isManager)return;
       if (appData.staff.length >= 10) {
         alert(
           translate("maximumStaff")
@@ -2211,7 +2108,7 @@
     }
 
     function deleteStaff(staffIndex) {
-      if (!isManager) return;
+      if(!isManager)return;
       if (appData.staff.length <= 1) {
         alert(
           translate("minimumStaff")
@@ -2404,8 +2301,8 @@
       }
     );
 
-    element("authButton").addEventListener("click", handleAuthButton);
-
+    element("loginButton").addEventListener("click",loginWithGoogle);
+    element("logoutButton").addEventListener("click",()=>signOut(auth));
     render();
     initializeFirebase();
   </script>
